@@ -301,7 +301,13 @@ function processLibrary(libraryId: string): DocChunk[] {
     return [];
   }
 
-  const files = readdirSync(libDir).filter((f) => f.endsWith(".md"));
+  // Prefer _processed.md files (LLM-compressed), fall back to raw .md
+  const allFiles = readdirSync(libDir);
+  const processedFiles = allFiles.filter((f) => f.endsWith("_processed.md"));
+  const files =
+    processedFiles.length > 0
+      ? processedFiles
+      : allFiles.filter((f) => f.endsWith(".md") && !f.startsWith("_"));
 
   if (files.length === 0) {
     console.error(`❌ No .md files found in ${libDir}`);
@@ -309,12 +315,23 @@ function processLibrary(libraryId: string): DocChunk[] {
   }
 
   const allChunks: DocChunk[] = [];
+  const seenContent = new Set<string>(); // deduplicate by content
 
   for (const file of files) {
-    console.log(`  📄 Processing ${file}...`);
     const chunks = processMarkdownFile(join(libDir, file), libraryId);
-    allChunks.push(...chunks);
-    console.log(`     → ${chunks.length} chunks extracted`);
+
+    // Deduplicate: skip chunks with identical content
+    const unique = chunks.filter((c) => {
+      const key = c.content.slice(0, 200); // first 200 chars as fingerprint
+      if (seenContent.has(key)) return false;
+      seenContent.add(key);
+      return true;
+    });
+
+    allChunks.push(...unique);
+    if (unique.length > 0) {
+      console.log(`  📄 ${file} → ${unique.length} chunks`);
+    }
   }
 
   return allChunks;

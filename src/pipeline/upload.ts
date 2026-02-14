@@ -26,7 +26,7 @@ function getVectorClient(): Index<VectorMetadata> {
 
   if (!url || !token) {
     console.error("❌ Missing UPSTASH_VECTOR_REST_URL or UPSTASH_VECTOR_REST_TOKEN in .env");
-    console.error("   Create an index at https://console.upstash.com with bge-small-en-v1.5");
+    console.error("   Create an index at https://console.upstash.com (recommended: bge-m3)");
     process.exit(1);
   }
 
@@ -42,7 +42,7 @@ async function uploadChunks(index: Index<VectorMetadata>, chunks: DocChunk[]) {
 
     const vectors = batch.map((chunk) => ({
       id: chunk.id,
-      data: `${chunk.title}\n${chunk.content}`, // Upstash embeds this text
+      data: `${chunk.libraryId}: ${chunk.title}\n${chunk.section}\n${chunk.content}`, // Upstash embeds this text
       metadata: {
         libraryId: chunk.libraryId,
         title: chunk.title,
