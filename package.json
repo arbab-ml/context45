@@ -1,0 +1,50 @@
+{
+  "name": "context45-mcp",
+  "version": "0.1.0",
+  "description": "All the docs. None of the bloat. Minimal MCP server for AI documentation context.",
+  "type": "module",
+  "main": "dist/server/index.js",
+  "bin": {
+    "context45-mcp": "dist/server/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/server/index.ts",
+    "process-docs": "tsx src/pipeline/process.ts",
+    "upload-docs": "tsx src/pipeline/upload.ts",
+    "pipeline": "tsx src/pipeline/process.ts && tsx src/pipeline/upload.ts"
+  },
+  "keywords": [
+    "mcp",
+    "documentation",
+    "context",
+    "ai",
+    "llm",
+    "minimal",
+    "openai",
+    "claude",
+    "anthropic"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@upstash/vector": "^1.2.2",
+    "dotenv": "^17.3.1",
+    "mdast-util-to-string": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
