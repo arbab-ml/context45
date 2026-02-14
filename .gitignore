@@ -4,3 +4,6 @@ dist/
 .env
 .DS_Store
 *.log
+
+# Raw downloaded docs (large files, fetch with: npm run fetch-docs)
+docs/**/_raw-*

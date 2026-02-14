@@ -2,7 +2,10 @@
  * Context45 Vector Upload Script
  *
  * Reads processed JSON chunks from .processed/ and uploads them to Upstash Vector.
- * Upstash handles embedding automatically (bge-small-en-v1.5).
+ * Upstash handles embedding automatically (bge-m3).
+ *
+ * For each library, old vectors are deleted first to prevent zombies
+ * from renamed/removed sections.
  */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -31,6 +34,20 @@ function getVectorClient(): Index<VectorMetadata> {
   }
 
   return new Index<VectorMetadata>({ url, token });
+}
+
+// ─── Cleanup ──────────────────────────────────────────────────
+
+/**
+ * Delete all existing vectors for a library before re-uploading.
+ * Prevents zombie vectors from renamed/removed sections.
+ */
+async function cleanupLibrary(index: Index<VectorMetadata>, libraryId: string) {
+  const result = await index.delete({ filter: `libraryId = '${libraryId}'` });
+  const deleted = (result as { deleted: number }).deleted;
+  if (deleted > 0) {
+    console.log(`  🧹 Cleaned ${deleted} old vectors`);
+  }
 }
 
 // ─── Upload ────────────────────────────────────────────────────
@@ -85,6 +102,9 @@ async function main() {
   for (const file of files) {
     const libraryId = file.replace(".json", "");
     console.log(`📚 Uploading: ${libraryId}`);
+
+    // Clean old vectors first to prevent zombies
+    await cleanupLibrary(index, libraryId);
 
     const chunks: DocChunk[] = JSON.parse(readFileSync(join(PROCESSED_DIR, file), "utf-8"));
 

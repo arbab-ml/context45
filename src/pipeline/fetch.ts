@@ -27,12 +27,8 @@ const SOURCES: DocSource[] = [
     name: "Anthropic Claude API",
     urls: [
       {
-        filename: "_raw-llms.txt",
-        url: "https://docs.anthropic.com/llms.txt",
-      },
-      {
         filename: "_raw-llms-full.txt",
-        url: "https://docs.anthropic.com/llms-full.txt",
+        url: "https://platform.claude.com/llms-full.txt",
       },
     ],
   },
@@ -41,12 +37,8 @@ const SOURCES: DocSource[] = [
     name: "OpenAI API",
     urls: [
       {
-        filename: "_raw-llms.txt",
-        url: "https://platform.openai.com/llms.txt",
-      },
-      {
         filename: "_raw-llms-full.txt",
-        url: "https://platform.openai.com/llms-full.txt",
+        url: "https://developers.openai.com/api/docs/llms-full.txt",
       },
     ],
   },
