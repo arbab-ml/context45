@@ -1,76 +1,82 @@
 /**
  * Context45 Documentation Processing Pipeline
  *
- * Takes raw markdown documentation and extracts only the essentials:
- * - Function/method signatures
- * - Parameters (name + type + one-liner)
- * - One short code example per concept
- * - Strips: prose, tutorials, marketing, "getting started" fluff
+ * Takes _processed.md files and chunks them by heading sections.
+ * Each ## or ### heading becomes its own chunk.
+ * Code blocks are NEVER split — a section stays as one chunk even if large.
  *
- * Output: JSON chunks (~200-400 tokens each) ready for vector upload
+ * Output: JSON chunks ready for vector upload
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
-import { join, basename } from "node:path";
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import { toString } from "mdast-util-to-string";
+import { join } from "node:path";
 import type { DocChunk } from "../types.js";
-import type { Root, Content, Heading, Code } from "mdast";
 
 // ─── Config ────────────────────────────────────────────────────
 
 const DOCS_DIR = join(import.meta.dirname, "../../docs");
 const OUTPUT_DIR = join(import.meta.dirname, "../../.processed");
 
-/** Max tokens (rough: 1 token ≈ 4 chars) per chunk */
-const MAX_CHUNK_CHARS = 1200; // ~300 tokens
-
 /** Sections to skip entirely */
-const SKIP_SECTIONS = [
-  "getting started",
-  "introduction",
-  "overview",
-  "what is",
-  "why use",
-  "prerequisites",
-  "installation",
-  "quick start",
-  "changelog",
-  "migration guide",
-  "contributing",
-  "faq",
-  "troubleshooting",
-  "community",
-  "support",
-  "license",
+const SKIP_HEADINGS = [
   "table of contents",
+  "additional resources",
 ];
 
-// ─── Markdown Parser ───────────────────────────────────────────
+// ─── Markdown Section Splitter (regex-based, no AST) ──────────
 
-const parser = unified().use(remarkParse);
-
-interface Section {
+interface MarkdownSection {
   heading: string;
   depth: number;
-  nodes: Content[];
+  content: string; // full raw markdown content including code blocks
 }
 
 /**
- * Split markdown AST into sections by headings
+ * Split markdown into sections by headings (## and ###).
+ * This is intentionally simple — no AST parsing — to preserve
+ * code blocks exactly as they appear in the source.
  */
-function splitIntoSections(tree: Root): Section[] {
-  const sections: Section[] = [];
-  let current: Section | null = null;
+function splitBySections(markdown: string): MarkdownSection[] {
+  const lines = markdown.split("\n");
+  const sections: MarkdownSection[] = [];
+  let currentHeading = "";
+  let currentDepth = 0;
+  let currentLines: string[] = [];
 
-  for (const node of tree.children) {
-    if (node.type === "heading") {
-      const heading = toString(node).trim();
-      current = { heading, depth: (node as Heading).depth, nodes: [] };
-      sections.push(current);
-    } else if (current) {
-      current.nodes.push(node);
+  for (const line of lines) {
+    // Match ## or ### headings (not # which is the doc title)
+    const headingMatch = line.match(/^(#{2,3})\s+(.+)/);
+
+    if (headingMatch) {
+      // Save previous section
+      if (currentHeading && currentLines.length > 0) {
+        const content = currentLines.join("\n").trim();
+        if (content.length > 0) {
+          sections.push({
+            heading: currentHeading,
+            depth: currentDepth,
+            content,
+          });
+        }
+      }
+
+      currentHeading = headingMatch[2].trim().replace(/`/g, "");
+      currentDepth = headingMatch[1].length;
+      currentLines = [];
+    } else {
+      currentLines.push(line);
+    }
+  }
+
+  // Save last section
+  if (currentHeading && currentLines.length > 0) {
+    const content = currentLines.join("\n").trim();
+    if (content.length > 0) {
+      sections.push({
+        heading: currentHeading,
+        depth: currentDepth,
+        content,
+      });
     }
   }
 
@@ -82,104 +88,7 @@ function splitIntoSections(tree: Root): Section[] {
  */
 function shouldSkip(heading: string): boolean {
   const lower = heading.toLowerCase();
-  return SKIP_SECTIONS.some((skip) => lower.includes(skip));
-}
-
-/**
- * Extract code blocks from AST nodes
- */
-function extractCodeBlocks(nodes: Content[]): string[] {
-  const blocks: string[] = [];
-
-  function walk(node: Content) {
-    if (node.type === "code") {
-      const code = (node as Code).value.trim();
-      if (code.length > 0 && code.length < 2000) {
-        blocks.push(code);
-      }
-    }
-    if ("children" in node && Array.isArray(node.children)) {
-      for (const child of node.children) {
-        walk(child as Content);
-      }
-    }
-  }
-
-  for (const node of nodes) {
-    walk(node);
-  }
-
-  return blocks;
-}
-
-/**
- * Extract text content from nodes, stripped of excessive prose.
- * Keeps: parameter lists, short descriptions, type info.
- * Strips: long paragraphs of explanation.
- */
-function extractEssentialText(nodes: Content[]): string {
-  const lines: string[] = [];
-
-  for (const node of nodes) {
-    const text = toString(node).trim();
-
-    // Skip empty
-    if (!text) continue;
-
-    // Keep list items (usually parameters/options)
-    if (node.type === "list") {
-      lines.push(text);
-      continue;
-    }
-
-    // Keep tables (parameter tables)
-    if (node.type === "table") {
-      lines.push(text);
-      continue;
-    }
-
-    // Keep short paragraphs (likely descriptions), skip long prose
-    if (node.type === "paragraph") {
-      if (text.length <= 200) {
-        lines.push(text);
-      }
-      // Skip long paragraphs — they're usually tutorial prose
-      continue;
-    }
-
-    // Keep inline code / definitions
-    if (node.type === "definition" || node.type === "html") {
-      if (text.length <= 300) {
-        lines.push(text);
-      }
-    }
-  }
-
-  return lines.join("\n");
-}
-
-/**
- * Determine chunk type based on content
- */
-function classifyChunk(heading: string, content: string, hasCode: boolean): DocChunk["type"] {
-  const lower = heading.toLowerCase() + " " + content.toLowerCase().slice(0, 200);
-
-  if (lower.includes("example") || lower.includes("usage") || (hasCode && content.length < 500)) {
-    return "example";
-  }
-  if (lower.includes("parameter") || lower.includes("argument") || lower.includes("option")) {
-    return "parameter";
-  }
-  if (
-    lower.includes("endpoint") ||
-    lower.includes("method") ||
-    lower.includes("function") ||
-    lower.includes("create") ||
-    lower.includes("api")
-  ) {
-    return "signature";
-  }
-  return "guide";
+  return SKIP_HEADINGS.some((skip) => lower.includes(skip));
 }
 
 /**
@@ -189,84 +98,79 @@ function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
 }
 
 /**
- * Process a single section into chunks
+ * Determine chunk type based on heading and content
  */
-function processSection(section: Section, libraryId: string): DocChunk[] {
-  if (shouldSkip(section.heading)) return [];
+function classifyChunk(heading: string, content: string): DocChunk["type"] {
+  const lower = (heading + " " + content.slice(0, 200)).toLowerCase();
 
-  const codeBlocks = extractCodeBlocks(section.nodes);
-  const essentialText = extractEssentialText(section.nodes);
+  if (lower.includes("example") || lower.includes("usage") || lower.includes("quick start")) {
+    return "example";
+  }
+  if (lower.includes("parameter") || lower.includes("request body") || lower.includes("argument")) {
+    return "parameter";
+  }
+  if (
+    lower.includes("endpoint") ||
+    lower.includes("post /") ||
+    lower.includes("get /") ||
+    lower.includes("api")
+  ) {
+    return "signature";
+  }
+  return "guide";
+}
 
-  // Skip sections with no useful content
-  if (!essentialText && codeBlocks.length === 0) return [];
+/**
+ * Find the parent ## heading for a ### section
+ */
+function getParentHeading(sections: MarkdownSection[], index: number): string {
+  for (let i = index - 1; i >= 0; i--) {
+    if (sections[i].depth === 2) {
+      return sections[i].heading;
+    }
+  }
+  return "";
+}
 
+/**
+ * Process a _processed.md file into chunks
+ */
+function processFile(filePath: string, libraryId: string): DocChunk[] {
+  const raw = readFileSync(filePath, "utf-8");
+  const sections = splitBySections(raw);
   const chunks: DocChunk[] = [];
-  const sectionSlug = slugify(section.heading);
+  const seenSlugs = new Set<string>();
 
-  // Build chunk content: text + first code example
-  let content = "";
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
 
-  if (essentialText) {
-    content += essentialText;
-  }
+    if (shouldSkip(section.heading)) continue;
+    if (section.content.length < 20) continue; // skip empty sections
 
-  // Add only the first (shortest) code example
-  if (codeBlocks.length > 0) {
-    const shortest = codeBlocks.sort((a, b) => a.length - b.length)[0];
-    if (content) content += "\n\n";
-    content += "```\n" + shortest + "\n```";
-  }
+    const parentHeading = section.depth === 3 ? getParentHeading(sections, i) : "";
+    const sectionContext = parentHeading ? `${parentHeading} > ${section.heading}` : section.heading;
 
-  // Skip if too small to be useful
-  if (content.length < 30) return [];
-
-  // Split into multiple chunks if too long
-  if (content.length > MAX_CHUNK_CHARS) {
-    // Split by double newline and regroup
-    const parts = content.split(/\n\n+/);
-    let currentContent = "";
-    let partIndex = 0;
-
-    for (const part of parts) {
-      if (currentContent.length + part.length > MAX_CHUNK_CHARS && currentContent.length > 0) {
-        chunks.push({
-          id: `${libraryId}/${sectionSlug}-${partIndex}`,
-          libraryId,
-          title: section.heading,
-          content: currentContent.trim(),
-          section: section.heading,
-          type: classifyChunk(section.heading, currentContent, currentContent.includes("```")),
-        });
-        partIndex++;
-        currentContent = part;
-      } else {
-        currentContent += (currentContent ? "\n\n" : "") + part;
-      }
+    // Generate unique slug
+    let slug = slugify(section.heading);
+    if (seenSlugs.has(slug)) {
+      let suffix = 2;
+      while (seenSlugs.has(`${slug}-${suffix}`)) suffix++;
+      slug = `${slug}-${suffix}`;
     }
+    seenSlugs.add(slug);
 
-    // Remaining content
-    if (currentContent.trim().length > 30) {
-      chunks.push({
-        id: `${libraryId}/${sectionSlug}-${partIndex}`,
-        libraryId,
-        title: section.heading,
-        content: currentContent.trim(),
-        section: section.heading,
-        type: classifyChunk(section.heading, currentContent, currentContent.includes("```")),
-      });
-    }
-  } else {
     chunks.push({
-      id: `${libraryId}/${sectionSlug}`,
+      id: `${libraryId}/${slug}`,
       libraryId,
       title: section.heading,
-      content: content.trim(),
-      section: section.heading,
-      type: classifyChunk(section.heading, content, codeBlocks.length > 0),
+      content: section.content,
+      section: sectionContext,
+      type: classifyChunk(section.heading, section.content),
     });
   }
 
@@ -274,24 +178,7 @@ function processSection(section: Section, libraryId: string): DocChunk[] {
 }
 
 /**
- * Process a markdown file into chunks
- */
-function processMarkdownFile(filePath: string, libraryId: string): DocChunk[] {
-  const raw = readFileSync(filePath, "utf-8");
-  const tree = parser.parse(raw) as Root;
-  const sections = splitIntoSections(tree);
-
-  const allChunks: DocChunk[] = [];
-  for (const section of sections) {
-    const chunks = processSection(section, libraryId);
-    allChunks.push(...chunks);
-  }
-
-  return allChunks;
-}
-
-/**
- * Process all docs for a library (all .md files in its folder)
+ * Process all docs for a library
  */
 function processLibrary(libraryId: string): DocChunk[] {
   const libDir = join(DOCS_DIR, libraryId);
@@ -301,37 +188,20 @@ function processLibrary(libraryId: string): DocChunk[] {
     return [];
   }
 
-  // Prefer _processed.md files (LLM-compressed), fall back to raw .md
-  const allFiles = readdirSync(libDir);
-  const processedFiles = allFiles.filter((f) => f.endsWith("_processed.md"));
-  const files =
-    processedFiles.length > 0
-      ? processedFiles
-      : allFiles.filter((f) => f.endsWith(".md") && !f.startsWith("_"));
+  // Only process _processed.md files
+  const files = readdirSync(libDir).filter((f) => f.endsWith("_processed.md"));
 
   if (files.length === 0) {
-    console.error(`❌ No .md files found in ${libDir}`);
+    console.error(`❌ No _processed.md files found in ${libDir}`);
     return [];
   }
 
   const allChunks: DocChunk[] = [];
-  const seenContent = new Set<string>(); // deduplicate by content
 
   for (const file of files) {
-    const chunks = processMarkdownFile(join(libDir, file), libraryId);
-
-    // Deduplicate: skip chunks with identical content
-    const unique = chunks.filter((c) => {
-      const key = c.content.slice(0, 200); // first 200 chars as fingerprint
-      if (seenContent.has(key)) return false;
-      seenContent.add(key);
-      return true;
-    });
-
-    allChunks.push(...unique);
-    if (unique.length > 0) {
-      console.log(`  📄 ${file} → ${unique.length} chunks`);
-    }
+    const chunks = processFile(join(libDir, file), libraryId);
+    allChunks.push(...chunks);
+    console.log(`  📄 ${file} → ${chunks.length} chunks`);
   }
 
   return allChunks;
@@ -342,24 +212,22 @@ function processLibrary(libraryId: string): DocChunk[] {
 function main() {
   console.log("🔧 Context45 Documentation Processor\n");
 
-  // Find all library folders in docs/
   const libraries = readdirSync(DOCS_DIR).filter((f) => {
     const p = join(DOCS_DIR, f);
     try {
-      return readdirSync(p).some((file) => file.endsWith(".md"));
+      return readdirSync(p).some((file) => file.endsWith("_processed.md"));
     } catch {
       return false;
     }
   });
 
   if (libraries.length === 0) {
-    console.error("❌ No libraries found in docs/. Add markdown files to docs/<library-name>/");
+    console.error("❌ No libraries found. Add _processed.md files to docs/<library>/");
     process.exit(1);
   }
 
   console.log(`Found ${libraries.length} libraries: ${libraries.join(", ")}\n`);
 
-  // Ensure output dir exists
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
