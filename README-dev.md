@@ -164,3 +164,36 @@ printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion
 ```
 
 Swap `libraryId` and `query` to test any combination.
+
+## Website
+
+The website lives in `website/` (Next.js, static export). It reads `_processed.md` files from `website/docs/` (copies of the root `docs/` files).
+
+**Local development:**
+```bash
+cd website
+npm install    # first time only
+npm run dev    # http://localhost:3000
+```
+
+**Build locally:**
+```bash
+cd website
+npm run build  # outputs to website/out/
+```
+
+**Deploy to Vercel (production):**
+```bash
+cd website
+vercel --prod
+```
+
+Vercel also auto-deploys on every push to `main` (if the repo is connected).
+
+**After updating `_processed.md` files**, copy them to the website:
+```bash
+cp docs/claude/_processed.md website/docs/claude/_processed.md
+cp docs/openai/_processed.md website/docs/openai/_processed.md
+```
+
+**Domain:** `context45.com` — DNS managed by Vercel (nameservers `ns1.vercel-dns.com`, `ns2.vercel-dns.com`).
