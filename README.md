@@ -110,11 +110,20 @@ npm run pipeline
 
 This chunks the markdown and uploads it to Upstash Vector.
 
-### Running Locally
+### Standalone Testing
+
+Test the MCP server directly without an AI assistant:
 
 ```bash
-npm run dev
+# Start the server and send a get-docs request
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get-docs","arguments":{"libraryId":"claude","query":"streaming"}}}\n' | npx tsx src/server/index.ts 2>/dev/null
 ```
+
+This sends JSON-RPC messages over stdin (the MCP stdio transport) and prints results to stdout.
+
+### Development
+
+See [README-dev.md](README-dev.md) for the full development guide — adding libraries, running the pipeline, cleaning vectors, etc.
 
 ## License
 
