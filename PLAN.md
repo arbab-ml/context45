@@ -37,7 +37,7 @@ USERS (every query, via MCP)
 | Vector DB | Upstash Vector (bge-m3, 1024 dims, 8192 seq length) |
 | Chunking | Regex-based heading splitter (no AST deps) |
 | Package | context45-mcp on npm |
-| Website | TBD — context45.com |
+| Website | Next.js (static export) on Vercel — context45.com |
 
 ## Build Steps
 
@@ -55,12 +55,19 @@ USERS (every query, via MCP)
 - [x] Tested `npx context45-mcp` end-to-end
 - [x] README + README-dev.md
 
-### Phase 2 — Growth
+### Phase 2 — Website ✅
 
-- [ ] Build landing page (context45.com)
+- [x] Next.js static site with landing page, library browser, detail pages
+- [x] Design: purple accent, Inter/JetBrains Mono, ambient glow, noise grain, fade-up animations
+- [x] Tabbed setup terminal (Claude Code / Cursor)
+- [x] Libraries table, metrics grid, how-it-works steps, CTA
+- [x] Library detail pages render _processed.md with TOC sidebar
+- [x] Deployed to Vercel, domain context45.com configured
+
+### Phase 3 — Growth
+
 - [ ] Add more libraries (Vercel AI SDK, LangChain, etc.)
 - [ ] Remote MCP endpoint (HTTP/SSE for web-based Claude)
-- [ ] Website with library browser
 
 ## Results
 
