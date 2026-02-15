@@ -131,3 +131,36 @@ The server exposes two tools over stdio (JSON-RPC):
 2. **`get-docs`** — queries Upstash Vector with `data` (auto-embedded) + `filter` by libraryId, returns top K results
 
 When a user adds Context45 to their AI assistant (Claude Code, Cursor, etc.), the assistant auto-discovers these tools and calls them when the user says "use context45".
+
+`get-docs` returns **3 chunks by default** (configurable up to 10 via `maxResults`).
+
+## Testing Commands
+
+**Reset and rebuild from scratch:**
+```bash
+npm run reset-index
+rm -rf .processed
+npm run pipeline
+```
+
+**Test resolve-library:**
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"resolve-library","arguments":{"query":"claude"}}}\n' | npx tsx src/server/index.ts 2>/dev/null
+```
+
+**Test get-docs (Claude — streaming):**
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get-docs","arguments":{"libraryId":"claude","query":"streaming"}}}\n' | npx tsx src/server/index.ts 2>/dev/null
+```
+
+**Test get-docs (OpenAI — chat completions):**
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get-docs","arguments":{"libraryId":"openai","query":"chat completions"}}}\n' | npx tsx src/server/index.ts 2>/dev/null
+```
+
+**Test get-docs (Claude — tool use):**
+```bash
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get-docs","arguments":{"libraryId":"claude","query":"tool use"}}}\n' | npx tsx src/server/index.ts 2>/dev/null
+```
+
+Swap `libraryId` and `query` to test any combination.
