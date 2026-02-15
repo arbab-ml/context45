@@ -13,7 +13,8 @@
     "process-docs": "tsx src/pipeline/process.ts",
     "upload-docs": "tsx src/pipeline/upload.ts",
     "pipeline": "tsx src/pipeline/process.ts && tsx src/pipeline/upload.ts",
-    "fetch-docs": "tsx src/pipeline/fetch.ts"
+    "fetch-docs": "tsx src/pipeline/fetch.ts",
+    "reset-index": "tsx scripts/reset-index.ts"
   },
   "keywords": [
     "mcp",

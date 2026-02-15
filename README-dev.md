@@ -22,6 +22,8 @@ src/
     process.ts         # Chunks _processed.md files into vectors
     upload.ts          # Uploads chunks to Upstash Vector (cleans old vectors first)
   types.ts             # Shared types, library registry
+scripts/
+  reset-index.ts       # Nuke all vectors from Upstash
 docs/
   claude/
     _processed.md      # Manually curated Claude API docs (committed)
@@ -42,6 +44,7 @@ docs/
 | `npm run process-docs` | `tsx src/pipeline/process.ts` | Chunk _processed.md → .processed/*.json |
 | `npm run upload-docs` | `tsx src/pipeline/upload.ts` | Upload chunks to Upstash Vector |
 | `npm run pipeline` | process + upload | Full pipeline in one command |
+| `npm run reset-index` | `tsx scripts/reset-index.ts` | Nuke all vectors from Upstash |
 
 ## Adding a New Library
 
@@ -83,30 +86,14 @@ This will:
 
 ## Cleaning Old Vectors
 
-Old vectors are cleaned automatically during `npm run upload-docs`. The upload script runs `index.delete({ filter: "libraryId = '...'" })` for each library before uploading new vectors.
+**Per-library cleanup is automatic.** Every `npm run upload-docs` deletes all existing vectors for a library before uploading new ones. No zombie vectors.
 
-To manually clean a library's vectors without re-uploading, you can run:
-
-```bash
-npx tsx -e "
-import { Index } from '@upstash/vector';
-import { config } from 'dotenv';
-config();
-const index = new Index({ url: process.env.UPSTASH_VECTOR_REST_URL, token: process.env.UPSTASH_VECTOR_REST_TOKEN });
-index.delete({ filter: \"libraryId = 'claude'\" }).then(r => console.log('Deleted:', r));
-"
-```
-
-To nuke the entire index (all libraries):
+**To nuke everything and start fresh:**
 
 ```bash
-npx tsx -e "
-import { Index } from '@upstash/vector';
-import { config } from 'dotenv';
-config();
-const index = new Index({ url: process.env.UPSTASH_VECTOR_REST_URL, token: process.env.UPSTASH_VECTOR_REST_TOKEN });
-index.reset().then(() => console.log('Index reset'));
-"
+npm run reset-index     # deletes ALL vectors from Upstash
+rm -rf .processed       # removes local JSON chunks
+npm run pipeline        # re-process and re-upload everything
 ```
 
 ## Chunking Strategy
