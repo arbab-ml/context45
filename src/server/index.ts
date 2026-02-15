@@ -15,24 +15,20 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { Index } from "@upstash/vector";
-import { config } from "dotenv";
 import { LIBRARIES } from "../types.js";
 import type { VectorMetadata } from "../types.js";
 
-config();
+// ─── Built-in read-only credentials ────────────────────────────
+// These are READ-ONLY tokens — they can only query, not write/delete.
+// Safe to embed in the published npm package.
+const DEFAULT_UPSTASH_URL = "https://crucial-herring-42427-us1-vector.upstash.io";
+const DEFAULT_UPSTASH_TOKEN = "ABkIMGNydWNpYWwtaGVycmluZy00MjQyNy11czFyZWFkb25seU5UazVPRFl4T1RVdE56SmlZaTAwTWpVMUxXRXpNbU10TVdFeU9XUmlOR1V6WlRneg==";
 
 // ─── Vector Client ─────────────────────────────────────────────
 
 function getVectorClient(): Index<VectorMetadata> {
-  const url = process.env.UPSTASH_VECTOR_REST_URL;
-  const token = process.env.UPSTASH_VECTOR_REST_TOKEN;
-
-  if (!url || !token) {
-    throw new Error(
-      "Missing UPSTASH_VECTOR_REST_URL or UPSTASH_VECTOR_REST_TOKEN. " +
-        "Set them in your environment or .env file."
-    );
-  }
+  const url = process.env.UPSTASH_VECTOR_REST_URL || DEFAULT_UPSTASH_URL;
+  const token = process.env.UPSTASH_VECTOR_REST_TOKEN || DEFAULT_UPSTASH_TOKEN;
 
   return new Index<VectorMetadata>({ url, token });
 }
