@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #08090a;
+  --surface: #111214;
+  --border: #1e2024;
+  --text: #e8e8ec;
+  --text-dim: #6b6e7a;
+  --accent: #a78bfa;
+  --accent-dim: rgba(167, 139, 250, 0.08);
+  --accent-glow: rgba(167, 139, 250, 0.15);
+  --green: #4ade80;
+}
+
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Noise grain overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Section labels ── */
+.section-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* ── Copyable install block ── */
+.install-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.install-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent-glow), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.install-block:hover::before { opacity: 1; }
+.install-block:hover { border-color: rgba(167, 139, 250, 0.3); }
+
+/* ── Metrics grid ── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.metric {
+  background: var(--surface);
+  padding: 40px 24px;
+  text-align: center;
+}
+.metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+/* ── Compare cards ── */
+.compare-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.compare-card {
+  background: var(--surface);
+  padding: 40px;
+}
+
+/* ── Bar visual ── */
+.bar-track {
+  height: 4px;
+  border-radius: 2px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Steps grid ── */
+.steps-grid {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.steps-grid > div {
+  flex: 1;
+  background: var(--surface);
+  padding: 40px 28px;
+}
+
+/* ── Code window ── */
+.code-window {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.code-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Libraries table ── */
+.lib-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+.animate-fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.8s ease-out forwards;
+}
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.35s; }
+.delay-3 { animation-delay: 0.5s; }
+.delay-4 { animation-delay: 0.65s; }
+.delay-5 { animation-delay: 0.85s; }
+.animate-pulse-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .metrics-grid { grid-template-columns: 1fr; }
+  .compare-cards { grid-template-columns: 1fr; }
+  .steps-grid { flex-direction: column; }
+}
+
+/* ── Prose dark theme overrides ── */
+.prose { @apply text-gray-300; }
+.prose h1, .prose h2, .prose h3 { @apply text-white scroll-mt-24; }
+.prose a { color: var(--accent); }
+.prose a:hover { filter: brightness(1.2); }
+.prose strong { @apply text-white; }
+.prose code { @apply text-purple-400 bg-gray-800/50 px-1.5 py-0.5 rounded text-sm before:content-none after:content-none; }
+.prose pre { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.prose pre code { @apply bg-transparent p-0 text-gray-300; }
+.prose table { border-color: var(--border); }
+.prose th { @apply text-white; border-color: var(--border); }
+.prose td { border-color: var(--border); }
+.prose hr { border-color: var(--border); }
+.prose blockquote { border-color: var(--border); @apply text-gray-400; }
+.prose li::marker { @apply text-gray-500; }
+
+/* ── Syntax highlighting ── */
+.hljs { @apply bg-transparent; }
+.hljs-keyword, .hljs-selector-tag { @apply text-[#ff7b72]; }
+.hljs-string, .hljs-attr { @apply text-[#a5d6ff]; }
+.hljs-comment { @apply text-[#8b949e]; }
+.hljs-function .hljs-title, .hljs-title.function_ { @apply text-[#d2a8ff]; }
+.hljs-number, .hljs-literal { @apply text-[#79c0ff]; }
+.hljs-built_in { @apply text-[#ffa657]; }
+.hljs-params { @apply text-gray-300; }
+.hljs-property { @apply text-[#79c0ff]; }
+.hljs-type { @apply text-[#ffa657]; }
