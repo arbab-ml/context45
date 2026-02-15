@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { LIBRARIES } from "@/lib/libraries";
 import { SetupTerminal } from "./setup-terminal";
-import { CopyInstall } from "./copy-install";
 
 export default function Home() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-[180px] pb-[100px] text-center">
+      <section className="pt-[180px] pb-16 text-center">
         <div className="max-w-[1000px] mx-auto px-6">
           {/* Badge */}
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 border border-border rounded-full text-xs text-dim mb-8 animate-fade-up delay-1">
@@ -26,16 +25,21 @@ export default function Home() {
           <p className="text-xs text-dim mb-12 animate-fade-up delay-3">
             Open source &middot; <a href="https://github.com/arbab-ml/context45" target="_blank" rel="noopener" className="text-accent hover:brightness-125 transition-all">Star on GitHub</a>
           </p>
+        </div>
+      </section>
 
-          {/* Install command */}
-          <div className="animate-fade-up delay-4">
-            <CopyInstall />
-          </div>
+      {/* Setup terminal */}
+      <section id="install" className="pb-16 animate-fade-up delay-4">
+        <div className="max-w-[1000px] mx-auto px-6">
+          <SetupTerminal />
+          <p className="text-center text-xs text-dim mt-4">
+            Then add <code className="text-accent text-xs bg-surface px-1.5 py-0.5 rounded border border-border">&quot;use context45&quot;</code> to your prompts to fetch relevant docs.
+          </p>
         </div>
       </section>
 
       {/* Metrics */}
-      <section className="pb-16 animate-fade-up delay-5">
+      <section className="py-12 animate-fade-up delay-5">
         <div className="max-w-[1000px] mx-auto px-6">
           <div className="metrics-grid">
             <div className="metric">
@@ -49,70 +53,6 @@ export default function Home() {
             <div className="metric">
               <div className="metric-value">6 <span className="text-base text-dim font-normal">KB</span></div>
               <div className="text-[13px] text-dim">package size</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison */}
-      <section className="py-12">
-        <div className="max-w-[1000px] mx-auto px-6">
-          <div className="section-label">Token usage per query</div>
-          <div className="compare-cards">
-            <div className="compare-card opacity-60">
-              <h3 className="text-sm font-medium mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-dim" />
-                Others
-              </h3>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-dim w-14 text-right">5,000+</span>
-                <div className="bar-track bg-dim" style={{ width: "100%" }} />
-              </div>
-            </div>
-            <div className="compare-card">
-              <h3 className="text-sm font-medium mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_8px_rgba(167,139,250,0.3)]" />
-                Context45
-              </h3>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-xs text-dim w-14 text-right">~200</span>
-                <div className="bar-track bg-gradient-to-r from-accent to-indigo-500" style={{ width: "4%" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Setup terminal — single terminal with Claude Code / Cursor tabs */}
-      <section id="install" className="py-12">
-        <div className="max-w-[1000px] mx-auto px-6">
-          <div className="section-label">One command. That&apos;s it.</div>
-          <SetupTerminal />
-          <p className="text-center text-xs text-dim mt-4">
-            Then add <code className="text-accent text-xs bg-surface px-1.5 py-0.5 rounded border border-border">&quot;use context45&quot;</code> to your prompts to fetch relevant docs.
-          </p>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-12">
-        <div className="max-w-[1000px] mx-auto px-6">
-          <div className="section-label">How it works</div>
-          <div className="steps-grid">
-            <div>
-              <div className="font-mono text-[11px] text-accent/60 mb-4">01</div>
-              <h4 className="text-sm font-medium mb-2">Curated</h4>
-              <p className="text-[13px] text-dim font-light leading-snug">Hand-compressed docs covering 95% of use cases. No tutorials, no fluff.</p>
-            </div>
-            <div>
-              <div className="font-mono text-[11px] text-accent/60 mb-4">02</div>
-              <h4 className="text-sm font-medium mb-2">Indexed</h4>
-              <p className="text-[13px] text-dim font-light leading-snug">Semantic search over vector embeddings finds the right chunk.</p>
-            </div>
-            <div>
-              <div className="font-mono text-[11px] text-accent/60 mb-4">03</div>
-              <h4 className="text-sm font-medium mb-2">Served</h4>
-              <p className="text-[13px] text-dim font-light leading-snug">Returns 2-3 chunks via MCP. Just the answer, 100-300 tokens.</p>
             </div>
           </div>
         </div>
@@ -154,6 +94,30 @@ export default function Home() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-12">
+        <div className="max-w-[1000px] mx-auto px-6">
+          <div className="section-label">How it works</div>
+          <div className="steps-grid">
+            <div>
+              <div className="font-mono text-[11px] text-accent/60 mb-4">01</div>
+              <h4 className="text-sm font-medium mb-2">Curated</h4>
+              <p className="text-[13px] text-dim font-light leading-snug">Hand-compressed docs covering 95% of use cases. No tutorials, no fluff.</p>
+            </div>
+            <div>
+              <div className="font-mono text-[11px] text-accent/60 mb-4">02</div>
+              <h4 className="text-sm font-medium mb-2">Indexed</h4>
+              <p className="text-[13px] text-dim font-light leading-snug">Semantic search over vector embeddings finds the right chunk.</p>
+            </div>
+            <div>
+              <div className="font-mono text-[11px] text-accent/60 mb-4">03</div>
+              <h4 className="text-sm font-medium mb-2">Served</h4>
+              <p className="text-[13px] text-dim font-light leading-snug">Returns 2-3 chunks via MCP. Just the answer, 100-300 tokens.</p>
+            </div>
           </div>
         </div>
       </section>
