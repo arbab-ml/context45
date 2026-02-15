@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LIBRARIES } from "@/lib/libraries";
 import { SetupTerminal } from "./setup-terminal";
+import { CopyInstall } from "./copy-install";
 
 export default function Home() {
   return (
@@ -19,17 +20,16 @@ export default function Home() {
             <span className="font-light text-dim">None of the bloat.</span>
           </h1>
 
-          <p className="text-[17px] text-dim font-light max-w-[420px] mx-auto mb-12 leading-relaxed animate-fade-up delay-3">
+          <p className="text-[17px] text-dim font-light max-w-[420px] mx-auto mb-4 leading-relaxed animate-fade-up delay-3">
             MCP server that gives AI assistants only what matters. 20x less tokens.
+          </p>
+          <p className="text-xs text-dim mb-12 animate-fade-up delay-3">
+            Open source &middot; <a href="https://github.com/arbab-ml/context45" target="_blank" rel="noopener" className="text-accent hover:brightness-125 transition-all">Star on GitHub</a>
           </p>
 
           {/* Install command */}
           <div className="animate-fade-up delay-4">
-            <div className="install-block inline-flex mx-auto">
-              <span className="text-dim select-none relative z-10">$</span>
-              <span className="text-white relative z-10">npx context45-mcp</span>
-              <svg className="text-dim hover:text-accent transition-colors relative z-10" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-            </div>
+            <CopyInstall />
           </div>
         </div>
       </section>
