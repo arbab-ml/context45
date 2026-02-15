@@ -8,7 +8,7 @@ export interface TOCItem {
 }
 
 export function getProcessedMd(libraryId: string): string {
-  const mdPath = path.join(process.cwd(), "..", "docs", libraryId, "_processed.md");
+  const mdPath = path.join(process.cwd(), "docs", libraryId, "_processed.md");
   return fs.readFileSync(mdPath, "utf-8");
 }
 
