@@ -8,12 +8,12 @@
     "context45-mcp": "dist/server/index.js"
   },
   "scripts": {
-    "build": "tsc",
     "dev": "tsx src/server/index.ts",
-    "process-docs": "tsx src/pipeline/process.ts",
+    "build": "tsc",
+    "fetch-docs": "tsx src/pipeline/fetch.ts",
+    "chunk-docs": "tsx src/pipeline/process.ts",
     "upload-docs": "tsx src/pipeline/upload.ts",
     "pipeline": "tsx src/pipeline/process.ts && tsx src/pipeline/upload.ts",
-    "fetch-docs": "tsx src/pipeline/fetch.ts",
     "reset-index": "tsx scripts/reset-index.ts"
   },
   "keywords": [

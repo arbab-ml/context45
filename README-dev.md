@@ -36,15 +36,18 @@ docs/
 
 ## NPM Scripts
 
-| Script | Command | Description |
-|--------|---------|-------------|
-| `npm run dev` | `tsx src/server/index.ts` | Run MCP server locally |
-| `npm run build` | `tsc` | Compile TypeScript |
-| `npm run fetch-docs` | `tsx src/pipeline/fetch.ts` | Download raw llms-full.txt files |
-| `npm run process-docs` | `tsx src/pipeline/process.ts` | Chunk _processed.md → .processed/*.json |
-| `npm run upload-docs` | `tsx src/pipeline/upload.ts` | Upload chunks to Upstash Vector |
-| `npm run pipeline` | process + upload | Full pipeline in one command |
-| `npm run reset-index` | `tsx scripts/reset-index.ts` | Nuke all vectors from Upstash |
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Run MCP server locally |
+| `npm run build` | Compile TypeScript |
+| | **Pipeline (in order)** |
+| `npm run fetch-docs` | 1. Download raw llms-full.txt files (reference only) |
+| | 2. **You** manually create `_processed.md` (see below) |
+| `npm run chunk-docs` | 3. Split `_processed.md` by headings → `.processed/*.json` |
+| `npm run upload-docs` | 4. Upload chunks to Upstash (deletes old vectors first) |
+| `npm run pipeline` | Runs steps 3+4 together |
+| | **Maintenance** |
+| `npm run reset-index` | Nuke ALL vectors from Upstash |
 
 ## Adding a New Library
 

@@ -45,7 +45,7 @@ Add to `~/.cursor/mcp.json`:
 | Library | Status |
 |---------|--------|
 | Claude API (Anthropic) | ✅ Available |
-| OpenAI API | 🔜 Coming soon |
+| OpenAI API | ✅ Available |
 
 ## How It Works
 
