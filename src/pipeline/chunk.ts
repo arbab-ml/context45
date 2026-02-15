@@ -1,11 +1,10 @@
 /**
- * Context45 Documentation Processing Pipeline
+ * Context45 Documentation Chunker
  *
- * Takes _processed.md files and chunks them by heading sections.
- * Each ## or ### heading becomes its own chunk.
+ * Splits _processed.md files into chunks by heading (## and ###).
  * Code blocks are NEVER split — a section stays as one chunk even if large.
  *
- * Output: JSON chunks ready for vector upload
+ * Output: .processed/*.json — ready for vector upload
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
@@ -210,7 +209,7 @@ function processLibrary(libraryId: string): DocChunk[] {
 // ─── Main ──────────────────────────────────────────────────────
 
 function main() {
-  console.log("🔧 Context45 Documentation Processor\n");
+  console.log("🔧 Context45 Documentation Chunker\n");
 
   const libraries = readdirSync(DOCS_DIR).filter((f) => {
     const p = join(DOCS_DIR, f);

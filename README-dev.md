@@ -19,7 +19,7 @@ src/
   server/index.ts     # MCP server (resolve-library + get-docs tools)
   pipeline/
     fetch.ts           # Downloads raw llms-full.txt files (reference only)
-    process.ts         # Chunks _processed.md files into vectors
+    chunk.ts           # Splits _processed.md by headings → JSON chunks
     upload.ts          # Uploads chunks to Upstash Vector (cleans old vectors first)
   types.ts             # Shared types, library registry
 scripts/
@@ -42,7 +42,7 @@ docs/
 | `npm run build` | Compile TypeScript |
 | | **Pipeline (in order)** |
 | `npm run fetch-docs` | 1. Download raw llms-full.txt files (reference only) |
-| | 2. **You** manually create `_processed.md` (see below) |
+| | 2. **You** manually curate `_processed.md` (see prompt below) |
 | `npm run chunk-docs` | 3. Split `_processed.md` by headings → `.processed/*.json` |
 | `npm run upload-docs` | 4. Upload chunks to Upstash (deletes old vectors first) |
 | `npm run pipeline` | Runs steps 3+4 together |
@@ -51,7 +51,22 @@ docs/
 
 ## Adding a New Library
 
-### Step 1: Fetch the raw docs
+### Step 1: Register the library
+
+Add it to the `LIBRARIES` array in `src/types.ts`:
+
+```typescript
+{
+  id: "openai",
+  name: "OpenAI API",
+  description: "OpenAI API reference — models, chat completions, embeddings, ...",
+  version: "latest",
+}
+```
+
+And add the source URL in `src/pipeline/fetch.ts`.
+
+### Step 2: Fetch the raw docs
 
 ```bash
 npm run fetch-docs
@@ -61,9 +76,9 @@ npx tsx src/pipeline/fetch.ts openai
 
 This saves `_raw-llms-full.txt` to `docs/<library>/` for reference.
 
-### Step 2: Create the _processed.md
+### Step 3: Curate _processed.md
 
-This is the key step — **manually curate** the documentation using an AI assistant. Open the raw file and use this prompt:
+This is the key step — **you** manually curate the documentation using Claude Code. Use this prompt (adapt paths for your library):
 
 ```
 Now, looking at @docs/openai/_raw-llms-full.md file prepare core API documentation
@@ -74,18 +89,18 @@ documentation, save it in docs/openai/_processed.md which basically gives everyt
 to be used by the people.
 ```
 
-Adapt the paths/library name as needed. The goal: **under 1000 lines**, only core API usage, models, and essential patterns. Strip tutorials, marketing, migration guides, and niche features.
+The goal: **under 1000 lines**, only core API usage, models, and essential patterns. Strip tutorials, marketing, migration guides, and niche features.
 
-### Step 3: Run the pipeline
+### Step 4: Chunk and upload
 
 ```bash
 npm run pipeline
 ```
 
 This will:
-1. Chunk `_processed.md` by headings (## and ###), never splitting code blocks
-2. **Delete all old vectors** for that library from Upstash (prevents zombies)
-3. Upload fresh vectors
+1. Split `_processed.md` by headings (## and ###) into chunks — code blocks are never split
+2. Delete all old vectors for that library from Upstash (prevents zombies)
+3. Upload fresh chunks as vectors
 
 ## Cleaning Old Vectors
 
@@ -96,12 +111,12 @@ This will:
 ```bash
 npm run reset-index     # deletes ALL vectors from Upstash
 rm -rf .processed       # removes local JSON chunks
-npm run pipeline        # re-process and re-upload everything
+npm run pipeline        # chunk and re-upload everything
 ```
 
 ## Chunking Strategy
 
-`process.ts` splits `_processed.md` files by markdown headings:
+`chunk.ts` splits `_processed.md` files by markdown headings:
 
 - Splits on `##` and `###` headings only
 - Code blocks (``` fenced) are **never split** mid-block
@@ -116,38 +131,3 @@ The server exposes two tools over stdio (JSON-RPC):
 2. **`get-docs`** — queries Upstash Vector with `data` (auto-embedded) + `filter` by libraryId, returns top K results
 
 When a user adds Context45 to their AI assistant (Claude Code, Cursor, etc.), the assistant auto-discovers these tools and calls them when the user says "use context45".
-
-## Registering a New Library
-
-Add it to the `LIBRARIES` array in `src/types.ts`:
-
-```typescript
-{
-  id: "openai",
-  name: "OpenAI API",
-  description: "OpenAI API reference — models, chat completions, embeddings, ...",
-  version: "latest",
-}
-```
-
-Then add the source URLs in `src/pipeline/fetch.ts` and create the `_processed.md`.
-
-## Testing Queries
-
-Quick way to test search quality after uploading:
-
-```bash
-npx tsx -e "
-import { Index } from '@upstash/vector';
-import { config } from 'dotenv';
-config();
-const index = new Index({ url: process.env.UPSTASH_VECTOR_REST_URL, token: process.env.UPSTASH_VECTOR_REST_TOKEN });
-async function q(query) {
-  const r = await index.query({ data: query + ' Claude API', topK: 3, includeMetadata: true, filter: \"libraryId = 'claude'\" });
-  const tokens = r.reduce((s, x) => s + (x.metadata?.content?.length || 0), 0) / 4;
-  console.log(query, '→', Math.round(tokens), 'tokens');
-  r.forEach(x => console.log('  [' + x.score?.toFixed(3) + ']', x.metadata?.title));
-}
-q('streaming');
-"
-```

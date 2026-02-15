@@ -11,9 +11,9 @@
     "dev": "tsx src/server/index.ts",
     "build": "tsc",
     "fetch-docs": "tsx src/pipeline/fetch.ts",
-    "chunk-docs": "tsx src/pipeline/process.ts",
+    "chunk-docs": "tsx src/pipeline/chunk.ts",
     "upload-docs": "tsx src/pipeline/upload.ts",
-    "pipeline": "tsx src/pipeline/process.ts && tsx src/pipeline/upload.ts",
+    "pipeline": "tsx src/pipeline/chunk.ts && tsx src/pipeline/upload.ts",
     "reset-index": "tsx scripts/reset-index.ts"
   },
   "keywords": [
